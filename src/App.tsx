@@ -91,12 +91,12 @@ export default function App() {
     <main>
       <header>
         <h1>TI-Nspire stream</h1>
-        <p className="sub">CX II CAS over WebUSB · live</p>
+        <p className="sub">View the CX II CAS over WebUSB. Good for screen recording. Requires a WebUSB-compatible browser (e.g. Chrome or Edge)</p>
       </header>
 
       {!usbOk && (
         <p className="banner">
-          This browser has no WebUSB. Open this page in Chrome or Edge via http://localhost.
+          This browser has no WebUSB. Open this page in Chrome or Edge.
         </p>
       )}
 
