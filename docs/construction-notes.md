@@ -100,5 +100,14 @@ eliminates the stall-on-one-packet failure mode.
 ## Tuning
 
 `SCREENSHOT_INTERVAL_MS` in `src/config.ts` is the request period and caps the
-frame rate. Because dropped frames are harmless now, it can be lowered safely
-(e.g. 500 ms for ~2 fps) if the calc keeps up.
+frame rate. It is currently 200 ms, targeting at most 5 fps. Because dropped
+frames are harmless now, it can be lowered toward 100 ms for testing, but the
+calculator's screenshot encoding and response time are likely to limit the
+sustained rate before USB bandwidth does. The UI reports completed frames per
+second, which is the number to use when tuning.
+
+The capture path keeps memory bounded: queued stream payloads are capped,
+unreasonable frame dimensions are rejected before allocation, and the canvas
+does not make an additional RGBA copy. A normal 320×240 RGB565 frame still
+uses a short-lived RLE buffer plus decoded pixel/RGBA buffers, so the peak is
+well below a megabyte before browser canvas storage.

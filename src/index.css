@@ -19,6 +19,15 @@ main {
   padding: 2rem 1.25rem 3rem;
 }
 
+main.theater-mode {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: none;
+  height: 100vh;
+  padding: 0.75rem;
+}
+
 h1 {
   margin: 0;
   font-size: 1.5rem;
@@ -35,6 +44,35 @@ h1 {
   align-items: center;
   gap: 0.85rem;
   margin: 1.25rem 0;
+}
+
+main.theater-mode header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+main.theater-mode .sub {
+  display: none;
+}
+
+main.theater-mode .row {
+  margin: 0.65rem 0;
+}
+
+main.theater-mode .screen {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+main.theater-mode canvas {
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
 }
 
 button {
@@ -57,6 +95,11 @@ button:disabled {
   font-size: 0.9rem;
 }
 
+.theater-button {
+  margin-left: auto;
+  background: #2b333d;
+}
+
 .banner,
 .error {
   background: #3a2428;
@@ -72,6 +115,11 @@ button:disabled {
   border-radius: 10px;
   padding: 8px;
   box-shadow: 0 12px 40px rgb(0 0 0 / 35%);
+}
+
+main.theater-mode .screen {
+  border-radius: 6px;
+  padding: 4px;
 }
 
 canvas {

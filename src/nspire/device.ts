@@ -17,6 +17,8 @@ const DEVICE_ADDR = 0x6401;
 const SCREENSHOT_SID = 0x4024;
 const DISCONNECT_SID = 0x40de;
 const MAX_NNSE = NNSE_HEADER_SIZE + 1472;
+const MAX_STREAM_QUEUE = 32;
+const MAX_FRAME_PIXELS = 1_000_000;
 /** Steady-state read timeout: a stalled stream should recover in ~6 s. */
 const TRANSFER_TIMEOUT_MS = 5000;
 /** Handshake timeout: the calc can be slow to respond right after connect. */
@@ -26,7 +28,7 @@ export type Screenshot = {
   width: number;
   height: number;
   bpp: number;
-  rgba: Uint8ClampedArray;
+  rgba: Uint8ClampedArray<ArrayBuffer>;
 };
 
 type FrameBuilder = {
@@ -45,7 +47,12 @@ function beginFrame(d: Uint8Array): FrameBuilder | null {
   const width = view.getUint16(9, false);
   const height = view.getUint16(11, false);
   const bpp = d[13];
-  if (!rleSize || rleSize > 2_000_000 || (bpp !== 4 && bpp !== 16)) {
+  if (
+    !rleSize ||
+    rleSize > 2_000_000 ||
+    width * height > MAX_FRAME_PIXELS ||
+    (bpp !== 4 && bpp !== 16)
+  ) {
     return null;
   }
   return { rleSize, width, height, bpp, rle: new Uint8Array(rleSize), filled: 0 };
@@ -451,6 +458,10 @@ export class NspireCx2 {
         break;
       }
       case Service.Stream:
+        // A stalled consumer must not retain an unbounded number of USB
+        // payloads. Dropping the backlog is safe because the next header
+        // starts a fresh frame.
+        if (this.streamQ.length >= MAX_STREAM_QUEUE) this.streamQ = [];
         this.streamQ.push(message.data.slice());
         break;
     }
@@ -551,7 +562,12 @@ function rleDecode(bpp: number, input: Uint8Array, outSize: number): Uint8Array 
   return out;
 }
 
-function pixelsToRgba(raw: Uint8Array, width: number, height: number, bpp: number): Uint8ClampedArray {
+function pixelsToRgba(
+  raw: Uint8Array,
+  width: number,
+  height: number,
+  bpp: number,
+): Uint8ClampedArray<ArrayBuffer> {
   const rgba = new Uint8ClampedArray(width * height * 4);
   if (bpp === 16) {
     for (let i = 0; i < width * height; i++) {

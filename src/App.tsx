@@ -7,7 +7,10 @@ export default function App() {
   const [status, setStatus] = useState<Status>("idle");
   const [error, setError] = useState<string | null>(null);
   const [frames, setFrames] = useState(0);
+  const [fps, setFps] = useState(0);
   const [size, setSize] = useState<string>("");
+  const [isTheaterMode, setIsTheaterMode] = useState(false);
+  const sizeRef = useRef("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const calcRef = useRef<NspireCx2 | null>(null);
   const runRef = useRef(false);
@@ -35,11 +38,15 @@ export default function App() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.putImageData(
-      new ImageData(new Uint8ClampedArray(shot.rgba), shot.width, shot.height),
+      new ImageData(shot.rgba, shot.width, shot.height),
       0,
       0,
     );
-    setSize(`${shot.width}×${shot.height} ${shot.bpp}bpp`);
+    const nextSize = `${shot.width}×${shot.height} ${shot.bpp}bpp`;
+    if (sizeRef.current !== nextSize) {
+      sizeRef.current = nextSize;
+      setSize(nextSize);
+    }
   }
 
   async function connect() {
@@ -51,12 +58,22 @@ export default function App() {
       runRef.current = true;
       setStatus("streaming");
       setFrames(0);
+      setFps(0);
+      let measuredFrames = 0;
+      let measuredAt = performance.now();
       void (async () => {
         try {
           await calc.stream((shot) => {
             if (!runRef.current) return;
             paint(shot);
-            setFrames((n) => n + 1);
+            measuredFrames += 1;
+            const now = performance.now();
+            if (now - measuredAt >= 1000) {
+              setFrames((n) => n + measuredFrames);
+              setFps(measuredFrames / ((now - measuredAt) / 1000));
+              measuredFrames = 0;
+              measuredAt = now;
+            }
           });
         } catch (e) {
           if (!runRef.current) return;
@@ -88,7 +105,7 @@ export default function App() {
   const usbOk = typeof navigator !== "undefined" && Boolean(navigator.usb);
 
   return (
-    <main>
+    <main className={isTheaterMode ? "theater-mode" : undefined}>
       <header>
         <h1>TI-Nspire stream</h1>
         <p className="sub">View the CX II CAS over WebUSB. Good for screen recording. Requires a WebUSB-compatible browser (e.g. Chrome or Edge)</p>
@@ -114,7 +131,17 @@ export default function App() {
           {status}
           {size ? ` · ${size}` : ""}
           {frames ? ` · ${frames} frames` : ""}
+          {fps ? ` · ${fps.toFixed(1)} fps` : ""}
         </span>
+        <button
+          type="button"
+          className="theater-button"
+          onClick={() => setIsTheaterMode((active) => !active)}
+          aria-pressed={isTheaterMode}
+          title="Expand the video within this window"
+        >
+          {isTheaterMode ? "Exit theater mode" : "Theater mode"}
+        </button>
       </div>
 
       {error && <p className="error">{error}</p>}
