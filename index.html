@@ -6,6 +6,11 @@
     <title>TI-Nspire Stream</title>
   </head>
   <body>
+    <script>
+      if (window.location.pathname === "/") {
+        window.location.replace("/ti-stream");
+      }
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
